@@ -53,13 +53,42 @@ public:
   // Конструктор конвертации из плотной матрицы
   TCRSMatrix(const vector<vector<T>>& dense)
   {
-    
+      if (dense.empty() || dense[0].empty()) {
+          throw out_of_range("dense matrix cannot be empty");
+      }
+
+      rows = dense.size();
+      cols = dense[0].size();
+
+      if (rows > MAX_MATRIX_SIZE || cols > MAX_MATRIX_SIZE) {
+          throw out_of_range("the matrix dimensions exceed the maximum.")
+      }
+
+      row_ptr.push_back(0);
+
+      for (size_t i = 0; i < rows; i++) {
+          if (dense[i].size() != cols) {
+              throw invalid_argument("rows must have the same number of col`s");
+          }
+
+          for (size_t j = 0; j < cols; j++) {
+              if (!isZero(dense[i][j])) {
+                  values.pushs_back(dense[i][j]);
+                  col_index.push_back(j);
+              }
+          }
+          row_ptr.push_back(values.size());
+      }
   }
 
   // Конструктор напрямую из массивов CRS
   TCRSMatrix(size_t r, size_t c, const vector<T>& vals, const vector<size_t>& c_idx, const vector<size_t>& r_ptr)
   {
-  
+      rows = r;
+      cols = c;
+      values = vals;
+      col_index = c_idx;
+      row_ptr = r_ptr;
   }
 
   TCRSMatrix(const TCRSMatrix& m) = default;
@@ -126,7 +155,7 @@ public:
       for (size_t i = 0; i < rows; i++) {
           T sumi = T(0);
           for (size_t j = row_ptr[i]; j < row_ptr[i + 1]; j++) {
-              sume += (values[j] * v[col_index[j]]);
+              sumi += (values[j] * v[col_index[j]]);
           }
           res[i] = sumi;
       }
