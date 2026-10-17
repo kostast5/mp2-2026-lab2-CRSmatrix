@@ -85,8 +85,18 @@ public:
   // Получение элемента по индексам (i, j)
   T at(size_t i, size_t j) const
   {
-  
-    }
+      if (i >= rows || j >= cols) {
+          throw out_of_range("index out of range");
+      }
+
+      for (size_t t = row_ptr[i]; t < row_ptr[i + 1]; t++) {
+          if (col_index[t] == j) {
+              return values[t];
+          }
+      }
+
+      return T(0);
+  }
 
   // Сравнение матриц
   bool operator==(const TCRSMatrix& m) const noexcept
@@ -107,7 +117,21 @@ public:
   // Умножение CRS матрицы на плотный вектор (SpMV)
   vector<T> operator*(const vector<T>& v) const
   {
-    
+      if (v.size() != cols) {
+          throw invalid_argument("vector size must match matrix col`s");
+      }
+
+      vector<T> res(rows, T(0));
+
+      for (size_t i = 0; i < rows; i++) {
+          T sumi = T(0);
+          for (size_t j = row_ptr[i]; j < row_ptr[i + 1]; j++) {
+              sume += (values[j] * v[col_index[j]]);
+          }
+          res[i] = sumi;
+      }
+
+      return res;
   }
 
   // Умножение двух CRS матриц (SpGEMM) -> результат тоже в формате CRS
