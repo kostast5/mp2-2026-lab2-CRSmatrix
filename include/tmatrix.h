@@ -166,7 +166,29 @@ public:
   // Сравнение матриц
   bool operator==(const TCRSMatrix& m) const noexcept
   {
-    
+      int isBool = true;
+
+      if (rows != m.rows || cols != m.cols) {
+          isBool = false;
+      }
+
+      if (values.size() != m.values.size()) {
+          isBool = false;
+      }
+
+      for (size_t i = 0; i < values.size(); i++) {
+          if (values[i] != m.values[i] || col_index[i] != m.col_index[i]) {
+              isBool = false;
+          }
+      }
+
+      for (size_t i = 0; i < row_ptr.size(); i++) {
+          if (row_ptr[i] != m.row_ptr[i]) {
+              isBool = false;
+          }
+      }
+
+      return isBool;
   }
   bool operator!=(const TCRSMatrix& m) const noexcept
   {
@@ -202,7 +224,27 @@ public:
   // Умножение двух CRS матриц (SpGEMM) -> результат тоже в формате CRS
   TCRSMatrix operator*(const TCRSMatrix& m) const
   {
-    
+      vector<T> new_values;
+      vector<size_t> new_col_index;
+      vector<size_t> new_row_ptr(rows + 1, 0);
+
+      for (size_t i = 0; i < rows; i++) {
+          vector<T> row_vals(m.cols, T(0));
+          vector<bool> row_used(m.cols, false);
+
+          for (size_t j = row_ptr[i]; j < row_ptr[i + 1]; j++) {
+              size_t col_a = col_index[j];
+              T val_a = values[j];
+
+              for (size_t k = m.row_ptr[col_a]; k < m.row_ptr[col_a + 1]; k++) {
+                  size_t col_b = m.col_index[k];
+                  row_vals[col_b] += (val_a * m.values[k]);
+                  row_used[col_b] = true;
+              }
+          }
+      }
+
+      return TCRSMatrix(rows, m.cols, new_values, new_col_index, new_row_ptr);
   }
 
   // Ввод/вывод (в плотном виде или в виде CRS-структуры)
