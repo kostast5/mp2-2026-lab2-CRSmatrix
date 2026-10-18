@@ -61,7 +61,7 @@ public:
       cols = dense[0].size();
 
       if (rows > MAX_MATRIX_SIZE || cols > MAX_MATRIX_SIZE) {
-          throw out_of_range("the matrix dimensions exceed the maximum.")
+          throw out_of_range("the matrix dimensions exceed the MAX_MATRIX_SIZE");
       }
 
       row_ptr.push_back(0);
@@ -73,7 +73,7 @@ public:
 
           for (size_t j = 0; j < cols; j++) {
               if (!isZero(dense[i][j])) {
-                  values.pushs_back(dense[i][j]);
+                  values.push_back(dense[i][j]);
                   col_index.push_back(j);
               }
           }
@@ -84,6 +84,34 @@ public:
   // Конструктор напрямую из массивов CRS
   TCRSMatrix(size_t r, size_t c, const vector<T>& vals, const vector<size_t>& c_idx, const vector<size_t>& r_ptr)
   {
+      if (r == 0 || r > MAX_MATRIX_SIZE || c == 0 || c > MAX_MATRIX_SIZE) {
+          throw out_of_range("matrix dimensions should be between 1 and MAX_MATRIX_SIZE");
+      }
+
+      if (r_ptr.size() != r + 1) {
+          throw invalid_argument("row_ptr size must be rows+1");
+      }
+
+      if (r_ptr[0] != 0 || r_ptr[r] != vals.size()) {
+          throw invalid_argument("invalid row_ptr values");
+      }
+
+      if (vals.size() != c_idx.size()) {
+          throw invalid_argument("values and col_index must have the same size");
+      }
+
+      for (size_t i = 0; i < r; i++) {
+          if (r_ptr[i] > r_ptr[i + 1]) {
+              throw invalid_argument("row_ptr must be non-decreasing");
+          }
+      }
+
+      for (size_t i = 0; i < c_idx.size(); i++) {
+          if (c_idx[i] >= c) {
+              throw invalid_argument("column index out of range");
+          }
+      }
+
       rows = r;
       cols = c;
       values = vals;
@@ -108,7 +136,15 @@ public:
   // Конвертация обратно в плотную матрицу (для проверки корректности операций)
   vector<vector<T>> toDense() const
   {
-  
+      vector<vector<T>> dense(rows, vector<T>(cols, T(0)));
+
+      for (size_t i = 0; i < rows; i++) {
+          for (size_t j = row_ptr[i]; j < row_ptr[i + 1]; j++) {
+              dense[i][col_index[j]] = values[j];
+          }
+      }
+
+      return dense;
   }
 
   // Получение элемента по индексам (i, j)
